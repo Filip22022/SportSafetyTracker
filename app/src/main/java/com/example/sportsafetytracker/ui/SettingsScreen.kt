@@ -1,5 +1,6 @@
 package com.example.sportsafetytracker.ui
 
+import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,24 +10,26 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.sportsafetytracker.MainViewModel
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.lifecycle.SavedStateHandle
+import com.example.sportsafetytracker.LocalMainViewModel
 
 
 @Composable
 fun SettingsScreen(
     onCancelButtonClicked: () -> Unit = {}
 ){
-
-    //TOD0 move variables to proper place
-    var count = remember {
-        mutableStateOf(0)
-    }
+    val viewModel = LocalMainViewModel.current
+    val delayTime by viewModel.delayTime.observeAsState()
 
     Box(
         modifier = Modifier
@@ -41,20 +44,22 @@ fun SettingsScreen(
         ) {
             Text(
                 text = "Delay time",
-                fontSize = 25.sp
+                fontSize = 25.sp,
+                color = Color.Black
             )
             Text(
-                text = count.value.toString(),
-                fontSize = 40.sp
+                text = delayTime.toString(),
+                fontSize = 40.sp,
+                color = Color.Black
             )
-            Row() {
+            Row {
                 Button(onClick = {
-                    count.value--
+                    viewModel.updateDelayTime((delayTime?:0) - 1)
                 }) {
                     Text(text = "-")
                 }
                 Button(onClick = {
-                    count.value++
+                    viewModel.updateDelayTime((delayTime?:0) + 1)
                 }) {
                     Text(text = "+")
                 }
@@ -73,5 +78,14 @@ fun SettingsScreen(
 @Preview
 @Composable
 fun SettingsScreenPreview(){
-    SettingsScreen()
+    CompositionLocalProvider(LocalMainViewModel provides previewViewModel()) {
+        SettingsScreen()
+    }
+}
+
+class DummyApplication : Application() {
+    // Implement any necessary methods or leave it empty if not used in previews
+}
+fun previewViewModel(): MainViewModel {
+    return MainViewModel(DummyApplication(), SavedStateHandle())
 }

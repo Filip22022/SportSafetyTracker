@@ -1,5 +1,7 @@
 package com.example.sportsafetytracker.ui
 
+import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,11 +11,20 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.sportsafetytracker.LocalMainViewModel
+import com.example.sportsafetytracker.MainViewModel
 
 
 @Composable
@@ -21,7 +32,11 @@ fun TrackerScreen(
     onSettingsButtonClicked: () -> Unit = {}
 ){
     //TOD0 move variables to proper place
-    var isTracking = false
+    val viewModel = LocalMainViewModel.current
+    val accelerometerData by viewModel.accelerometerData.observeAsState(Triple(0f, 0f, 0f))
+    val delayTime by viewModel.delayTime.observeAsState()
+    var isTracking by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -36,22 +51,27 @@ fun TrackerScreen(
             Button(
                 onClick = {
                     isTracking = !isTracking
-                    toggleTracking()
+                    toggleTracking(isTracking, viewModel)
                 },
                 modifier = Modifier
                     .size(120.dp)
             ) {
                 Text(text = if (!isTracking) "Start" else "Stop")
             }
-            Text(text = if (isTracking) "Tracking Enabled" else "Tracking disabled")
+            Text(text = if (isTracking) "Tracking Enabled" else "Tracking Disabled")
+            if (isTracking) {
+                Text(text = "X: ${accelerometerData.first}, Y: ${accelerometerData.second}, Z: ${accelerometerData.third}")
+            }
 
         }
-        Button(
-            onClick = onSettingsButtonClicked,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-        ) {
-            Text(text = "Settings")
+        if (!isTracking) {
+            Button(
+                onClick = onSettingsButtonClicked,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+            ) {
+                Text(text = "Settings")
+            }
         }
     }
 
@@ -60,9 +80,13 @@ fun TrackerScreen(
 @Preview
 @Composable
 fun TrackerScreenPreview(){
-    TrackerScreen()
+    CompositionLocalProvider(LocalMainViewModel provides previewViewModel()) {
+        TrackerScreen()
+    }
 }
 
-fun toggleTracking() {
-    TODO()
+fun toggleTracking(isTracking : Boolean, viewModel: MainViewModel) {
+    if (isTracking) {
+        viewModel.startTracking()
+    }
 }
