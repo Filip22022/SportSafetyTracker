@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -21,7 +23,9 @@ fun TrackerScreen(
     onSettingsButtonClicked: () -> Unit = {}
 ){
     //TOD0 move variables to proper place
-    var isTracking = false
+    var isTracking = remember {
+        mutableStateOf(false)
+    }
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -35,15 +39,15 @@ fun TrackerScreen(
         ) {
             Button(
                 onClick = {
-                    isTracking = !isTracking
+                    isTracking.value = !isTracking.value
                     toggleTracking()
                 },
                 modifier = Modifier
                     .size(120.dp)
             ) {
-                Text(text = if (!isTracking) "Start" else "Stop")
+                Text(text = if (!isTracking.value) "Start" else "Stop")
             }
-            Text(text = if (isTracking) "Tracking Enabled" else "Tracking disabled")
+            Text(text = if (isTracking.value) "Tracking Enabled" else "Tracking disabled")
 
         }
         Button(
@@ -64,5 +68,5 @@ fun TrackerScreenPreview(){
 }
 
 fun toggleTracking() {
-    TODO()
+    // TODO
 }
