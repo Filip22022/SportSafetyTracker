@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">SportSafetyTracker</string>
+    <string name="tracker">Safety Tracker</string>
+    <string name="settings">Settings</string>
+</resources>
