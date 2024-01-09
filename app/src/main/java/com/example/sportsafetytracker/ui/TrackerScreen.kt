@@ -1,7 +1,5 @@
 package com.example.sportsafetytracker.ui
 
-import android.content.Context
-import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -87,6 +85,8 @@ fun TrackerScreenPreview(){
 
 fun toggleTracking(isTracking : Boolean, viewModel: MainViewModel) {
     if (isTracking) {
+        viewModel.stopTracking()
+    } else {
         viewModel.startTracking()
     }
 }
