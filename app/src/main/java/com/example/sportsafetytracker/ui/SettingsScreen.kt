@@ -11,6 +11,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,7 +30,7 @@ fun SettingsScreen(
     onCancelButtonClicked: () -> Unit = {}
 ){
     val viewModel = LocalMainViewModel.current
-    val delayTime by viewModel.delayTime.observeAsState()
+    val delayTime by viewModel.loadSettings().collectAsState(initial = 60)
 
     Box(
         modifier = Modifier
@@ -54,12 +55,12 @@ fun SettingsScreen(
             )
             Row {
                 Button(onClick = {
-                    viewModel.updateDelayTime((delayTime?:0) - 1)
+                    viewModel.updateDelayTime(delayTime - 1)
                 }) {
                     Text(text = "-")
                 }
                 Button(onClick = {
-                    viewModel.updateDelayTime((delayTime?:0) + 1)
+                    viewModel.updateDelayTime(delayTime + 1)
                 }) {
                     Text(text = "+")
                 }

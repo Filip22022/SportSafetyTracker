@@ -10,6 +10,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -32,7 +33,7 @@ fun TrackerScreen(
     //TOD0 move variables to proper place
     val viewModel = LocalMainViewModel.current
     val accelerometerData by viewModel.accelerometerData.observeAsState(Triple(0f, 0f, 0f))
-    val delayTime by viewModel.delayTime.observeAsState()
+    val delayTime by viewModel.loadSettings().collectAsState(initial = 60)
     var isTracking by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
