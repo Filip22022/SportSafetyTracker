@@ -1,14 +1,14 @@
 package com.example.sportsafetytracker
 import android.app.Application
-import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.SavedStateHandle
-import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 class MainViewModel(application: Application, private val savedStateHandle: SavedStateHandle) : AndroidViewModel(application) {
-    var delayTime = savedStateHandle.getLiveData("delayTime", 15)
 
     private val _accelerometerData = MutableLiveData<Triple<Float, Float, Float>>()
     val accelerometerData: LiveData<Triple<Float, Float, Float>> = _accelerometerData
@@ -17,8 +17,10 @@ class MainViewModel(application: Application, private val savedStateHandle: Save
         _accelerometerData.postValue(data)
     }
 
+    private val settingsManager = Settings(application)
+
     fun updateDelayTime(newDelayTime: Int) {
-        delayTime.value = newDelayTime
+        saveSettings(newDelayTime)
     }
 
     fun startTracking() {
@@ -32,5 +34,17 @@ class MainViewModel(application: Application, private val savedStateHandle: Save
     override fun onCleared() {
         super.onCleared()
         sensorDataManager.stopTracking()
+    }
+
+    fun loadSettings(): Flow<Int> {
+        return settingsManager.loadDelayTime()
+    }
+
+    private fun saveSettings(delayTime: Int) {
+        runBlocking {
+            launch {
+                settingsManager.saveDelayTime(delayTime)
+            }
+        }
     }
 }
