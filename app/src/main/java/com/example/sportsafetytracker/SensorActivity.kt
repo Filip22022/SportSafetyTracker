@@ -7,13 +7,29 @@ import android.hardware.SensorManager
 import android.content.Context
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlin.math.abs
 import kotlin.math.sqrt
 
-class SensorActivity(context: Context, private val onDataChanged: (Triple<Float, Float, Float>) -> Unit) : SensorEventListener {
+class SensorActivity(
+    private val mainViewModel: MainViewModel,
+    context: Context,
+    private val onDataChanged: (Triple<Float, Float, Float>) -> Unit) : SensorEventListener {
     private var sensorManager: SensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private var accelerometer: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
-    var lastAcceleration : Double? = null
+    interface CrashDetectionListener {
+        fun onCrashDetected()
+        fun onCrashAvoided()
+    }
+
+    private var crashDetectionListener: CrashDetectionListener? = null
+
+    fun setCrashDetectionListener(listener: CrashDetectionListener) {
+        crashDetectionListener = listener
+    }
+
+    private var lastAcceleration : Double? = null
     fun startTracking() {
         accelerometer?.also { accel ->
             sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_NORMAL)
@@ -32,10 +48,16 @@ class SensorActivity(context: Context, private val onDataChanged: (Triple<Float,
 
             val acceleration = sqrt((x*x + y*y + z*z).toDouble())
 
-            if (lastAcceleration != acceleration) {
-                lastAcceleration = acceleration
-
+            if (mainViewModel.crashHappened.value == true && abs((lastAcceleration ?: 0.0) - acceleration) > 1) {
+                crashDetectionListener?.onCrashAvoided()
             }
+
+            if (abs((lastAcceleration ?: 0.0) - acceleration) > 5) {
+                crashDetectionListener?.onCrashDetected()
+            }
+
+            lastAcceleration = acceleration
+
             onDataChanged(Triple(x, y, z))
         }
     }

@@ -8,17 +8,40 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
-class MainViewModel(application: Application, private val savedStateHandle: SavedStateHandle) : AndroidViewModel(application) {
+class MainViewModel(application: Application) : AndroidViewModel(application) {
+
 
     private val _accelerometerData = MutableLiveData<Triple<Float, Float, Float>>()
     val accelerometerData: LiveData<Triple<Float, Float, Float>> = _accelerometerData
 
-    private val sensorDataManager = SensorActivity(application) { data ->
+    private val _crashHappened = MutableLiveData<Boolean>()
+    val crashHappened: LiveData<Boolean> = _crashHappened
+
+    private val sensorDataManager = SensorActivity(this, application) { data ->
         _accelerometerData.postValue(data)
+    }
+
+    init {
+        val crashDetectionListener = object : SensorActivity.CrashDetectionListener {
+            override fun onCrashDetected() {
+                _crashHappened.postValue(true)
+            }
+            override fun onCrashAvoided() {
+                _crashHappened.postValue(false)
+            }
+        }
+
+        sensorDataManager.setCrashDetectionListener(crashDetectionListener)
     }
 
     private val settingsManager = Settings(application)
 
+    fun crashDetected() {
+        _crashHappened.postValue(true)
+    }
+    fun crashAvoided() {
+        _crashHappened.postValue(false)
+    }
 
     fun startTracking() {
         sensorDataManager.startTracking()

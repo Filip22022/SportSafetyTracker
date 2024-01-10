@@ -157,5 +157,5 @@ class DummyApplication : Application() {
     // Implement any necessary methods or leave it empty if not used in previews
 }
 fun previewViewModel(): MainViewModel {
-    return MainViewModel(DummyApplication(), SavedStateHandle())
+    return MainViewModel(DummyApplication())
 }

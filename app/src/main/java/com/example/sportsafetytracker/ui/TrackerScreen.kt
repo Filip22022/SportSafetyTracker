@@ -30,12 +30,10 @@ import com.example.sportsafetytracker.MainViewModel
 fun TrackerScreen(
     onSettingsButtonClicked: () -> Unit = {}
 ){
-    //TOD0 move variables to proper place
     val viewModel = LocalMainViewModel.current
     val accelerometerData by viewModel.accelerometerData.observeAsState(Triple(0f, 0f, 0f))
-    val delayTime by viewModel.loadDelayTime().collectAsState(initial = 60)
     var isTracking by remember { mutableStateOf(false) }
-    val context = LocalContext.current
+    val crashHappened by viewModel.crashHappened.observeAsState(false)
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -43,7 +41,7 @@ fun TrackerScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White),
+                .background(if(crashHappened) Color.Red else Color.White),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -86,8 +84,9 @@ fun TrackerScreenPreview(){
 
 fun toggleTracking(isTracking : Boolean, viewModel: MainViewModel) {
     if (isTracking) {
-        viewModel.stopTracking()
-    } else {
         viewModel.startTracking()
+    } else {
+        viewModel.stopTracking()
+        viewModel.crashAvoided()
     }
 }
