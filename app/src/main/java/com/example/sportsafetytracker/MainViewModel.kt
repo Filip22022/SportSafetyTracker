@@ -19,9 +19,6 @@ class MainViewModel(application: Application, private val savedStateHandle: Save
 
     private val settingsManager = Settings(application)
 
-    fun updateDelayTime(newDelayTime: Int) {
-        saveSettings(newDelayTime)
-    }
 
     fun startTracking() {
         sensorDataManager.startTracking()
@@ -36,15 +33,31 @@ class MainViewModel(application: Application, private val savedStateHandle: Save
         sensorDataManager.stopTracking()
     }
 
-    fun loadSettings(): Flow<Int> {
+    fun loadDelayTime(): Flow<Int> {
         return settingsManager.loadDelayTime()
     }
 
-    private fun saveSettings(delayTime: Int) {
+    fun loadPhoneNumber(): Flow<String> {
+        return settingsManager.loadPhoneNumber()
+    }
+
+     fun updateDelayTime(delayTime: Int) {
         runBlocking {
             launch {
                 settingsManager.saveDelayTime(delayTime)
             }
         }
+    }
+
+    fun updatePhoneNumber(number: String) {
+        runBlocking {
+            launch {
+                settingsManager.savePhoneNumber(number)
+            }
+        }
+    }
+
+    fun isValidNumber(numberValue: String): Boolean {
+        return settingsManager.isValidNumber(numberValue)
     }
 }
