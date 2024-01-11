@@ -1,9 +1,9 @@
 package com.example.sportsafetytracker
 import android.app.Application
+import android.os.CountDownTimer
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.SavedStateHandle
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -54,6 +54,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     override fun onCleared() {
         super.onCleared()
         sensorDataManager.stopTracking()
+        countdownTimer?.cancel()
     }
 
     fun loadDelayTime(): Flow<Int> {
@@ -82,5 +83,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun isValidNumber(numberValue: String): Boolean {
         return settingsManager.isValidNumber(numberValue)
+    }
+
+    private val _timerValue = MutableLiveData<Long>()
+    val timerValue: LiveData<Long> = _timerValue
+
+    private var countdownTimer: CountDownTimer? = null
+
+    fun startCountdownTimer(durationInMillis: Long) {
+        countdownTimer?.cancel()
+        countdownTimer = object : CountDownTimer(durationInMillis, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                _timerValue.postValue(millisUntilFinished / 1000)
+            }
+
+            override fun onFinish() {
+                _timerValue.postValue(0)
+            }
+        }.start()
+    }
+
+    fun stopCountdownTimer() {
+        countdownTimer?.cancel()
     }
 }

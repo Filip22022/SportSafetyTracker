@@ -5,9 +5,9 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.content.Context
-import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.sqrt
 
@@ -29,7 +29,7 @@ class SensorActivity(
         crashDetectionListener = listener
     }
 
-    private var lastAcceleration : Double? = null
+    private var lastAcceleration : Double? = 10.0
     fun startTracking() {
         accelerometer?.also { accel ->
             sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_NORMAL)
@@ -37,6 +37,7 @@ class SensorActivity(
     }
 
     fun stopTracking() {
+        lastAcceleration = 10.0
         sensorManager.unregisterListener(this)
     }
 
@@ -48,12 +49,24 @@ class SensorActivity(
 
             val acceleration = sqrt((x*x + y*y + z*z).toDouble())
 
-            if (mainViewModel.crashHappened.value == true && abs((lastAcceleration ?: 0.0) - acceleration) > 1) {
+            var currentDelayTime : Long = 0
+            mainViewModel.viewModelScope.launch {
+                currentDelayTime = mainViewModel.loadDelayTime().first().toLong()
+            }
+
+            if (mainViewModel.crashHappened.value == true
+                && abs((lastAcceleration ?: 0.0) - acceleration) > 2
+                && (mainViewModel.timerValue.value ?: 0) <= (currentDelayTime.toInt() - 5)) {
                 crashDetectionListener?.onCrashAvoided()
             }
 
-            if (abs((lastAcceleration ?: 0.0) - acceleration) > 5) {
+            if (abs((lastAcceleration ?: 0.0) - acceleration) > 8) {
                 crashDetectionListener?.onCrashDetected()
+
+
+                if (currentDelayTime > 0) {
+                    mainViewModel.startCountdownTimer((currentDelayTime)*1000)
+                }
             }
 
             lastAcceleration = acceleration
