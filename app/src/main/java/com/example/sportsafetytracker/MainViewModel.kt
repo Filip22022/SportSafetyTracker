@@ -1,10 +1,16 @@
 package com.example.sportsafetytracker
+
 import android.app.Application
 import android.os.CountDownTimer
+import android.telephony.SmsManager
+import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
@@ -99,11 +105,31 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             override fun onFinish() {
                 _timerValue.postValue(0)
+
+                sendSMS()
             }
         }.start()
     }
 
     fun stopCountdownTimer() {
         countdownTimer?.cancel()
+    }
+
+    private fun sendSMS() {
+        try {
+            val phoneNumber: String
+            runBlocking(Dispatchers.IO) {
+                phoneNumber = loadPhoneNumber().first()
+            }
+
+            val smsManager: SmsManager = SmsManager.getDefault()
+            val message = "TEST TEST"
+            //smsManager.sendTextMessage(phoneNumber, null, message, null, null)
+            Toast.makeText(getApplication<Application>().applicationContext, phoneNumber, Toast.LENGTH_SHORT).show()
+
+            Log.d("SMS", "Message sent successfully")
+        } catch (e: Exception) {
+            Log.e("SMS", "Failed to send SMS: ${e.message}")
+        }
     }
 }
