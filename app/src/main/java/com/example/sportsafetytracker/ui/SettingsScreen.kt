@@ -53,6 +53,9 @@ fun SettingsScreen(
     var inputSuccessText by remember {
         mutableStateOf("")
     }
+    var isDelayTimeErrorVisible by remember {
+        mutableStateOf(false)
+    }
 
     Box(
         modifier = Modifier
@@ -77,15 +80,23 @@ fun SettingsScreen(
             )
             Row {
                 Button(onClick = {
-                    viewModel.updateDelayTime(delayTime - 1)
+                    if(delayTime > 20) viewModel.updateDelayTime(delayTime - 1)
+                    else isDelayTimeErrorVisible = true;
                 }) {
                     Text(text = "-")
                 }
                 Button(onClick = {
                     viewModel.updateDelayTime(delayTime + 1)
+                    isDelayTimeErrorVisible = false;
                 }) {
                     Text(text = "+")
                 }
+            }
+            if(isDelayTimeErrorVisible) {
+                Text(
+                    text = "Delay time value cannot be smaller than 20!",
+                    color = Color.Red
+                )
             }
             Column(
                 verticalArrangement = Arrangement.Center,
@@ -93,8 +104,10 @@ fun SettingsScreen(
                 modifier = Modifier
                     .padding(40.dp)
             ) {
-                Text(text = "Current saved number:")
-                Text(text = numberValue)
+                Text(text = "Current saved number:",
+                    color = Color.Black)
+                Text(text = numberValue,
+                    color = Color.Black)
                 TextField(
                     value = newNumberValue,
                     placeholder = {Text(text = numberValue)},
@@ -121,7 +134,7 @@ fun SettingsScreen(
                             inputSuccessText = "Phone number saved"
 
                         } else {
-                            inputSuccessText = "Invalid number input"
+                            inputSuccessText = "Invalid number input. \nNumber correct formula is: \nArea Code & 9 digits \ne.g. +48987654321"
                         }
                         keyboardController?.hide()
                     }
@@ -129,10 +142,13 @@ fun SettingsScreen(
                     Text(text = "Save")
                 }
                 val textColor = if (isValidPhoneNumber) Color.Green else Color.Red
-                Text(
-                    text = inputSuccessText,
-                    color = textColor
-                )
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = inputSuccessText,
+                        color = textColor,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
             }
         }
         Button(

@@ -1,6 +1,7 @@
 package com.example.sportsafetytracker
 
 import android.app.Application
+import android.media.MediaPlayer
 import android.os.CountDownTimer
 import android.telephony.SmsManager
 import android.util.Log
@@ -15,8 +16,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
-
-
     private val _accelerometerData = MutableLiveData<Triple<Float, Float, Float>>()
     val accelerometerData: LiveData<Triple<Float, Float, Float>> = _accelerometerData
 
@@ -34,6 +33,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
             override fun onCrashAvoided() {
                 _crashHappened.postValue(false)
+                stopCountdownTimer()
+                stopAlarmSound()
             }
         }
 
@@ -47,6 +48,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
     fun crashAvoided() {
         _crashHappened.postValue(false)
+        stopCountdownTimer()
+        stopAlarmSound()
     }
 
     fun startTracking() {
@@ -101,11 +104,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         countdownTimer = object : CountDownTimer(durationInMillis, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 _timerValue.postValue(millisUntilFinished / 1000)
+
+                if (millisUntilFinished / 1000 <= 15.0) {
+                    playAlarmSound()
+                }
             }
 
             override fun onFinish() {
                 _timerValue.postValue(0)
-
+                stopAlarmSound()
                 sendSMS()
             }
         }.start()
@@ -132,4 +139,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             Log.e("SMS", "Failed to send SMS: ${e.message}")
         }
     }
+
+    private var mediaPlayer: MediaPlayer? = null
+    fun playAlarmSound() {
+        if (mediaPlayer == null) {
+            mediaPlayer = MediaPlayer.create(getApplication(), R.raw.severe_warning_alarm)
+            mediaPlayer?.setVolume(1.0f, 1.0f)
+        }
+        mediaPlayer?.start()
+    }
+
+    fun stopAlarmSound() {
+        mediaPlayer?.stop()
+        mediaPlayer?.release()
+        mediaPlayer = null
+    }
+
 }

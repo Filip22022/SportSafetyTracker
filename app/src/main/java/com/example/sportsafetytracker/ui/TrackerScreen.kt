@@ -12,6 +12,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -36,6 +37,9 @@ fun TrackerScreen(
     var isTracking by remember { mutableStateOf(false) }
     val crashHappened by viewModel.crashHappened.observeAsState(false)
     val timerValue by viewModel.timerValue.observeAsState(0)
+    val delayTime by viewModel.loadDelayTime().collectAsState(initial = 60) // necessary even if unused
+    val numberValue by viewModel.loadPhoneNumber().collectAsState(initial = "")
+    var missingNumberValue by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -49,8 +53,13 @@ fun TrackerScreen(
         ) {
             Button(
                 onClick = {
-                    isTracking = !isTracking
-                    toggleTracking(isTracking, viewModel)
+                    if (numberValue != "") {
+                        isTracking = !isTracking
+                        toggleTracking(isTracking, viewModel)
+                    }
+                    else {
+                        missingNumberValue = true
+                    }
                 },
                 modifier = Modifier
                     .size(120.dp)
@@ -58,12 +67,13 @@ fun TrackerScreen(
                 Text(text = if (!isTracking) "Start" else "Stop")
             }
             Text(text = if (isTracking) "Tracking Enabled" else "Tracking Disabled", color = Color.Black)
+            Text(text = if (missingNumberValue) "Choose emergency number in settings" else "", color = Color.Red)
             if (isTracking) {
                 Text(text = "X: ${accelerometerData.first}, Y: ${accelerometerData.second}, Z: ${accelerometerData.third}", color = Color.Black)
             }
             Spacer(modifier = Modifier.height(30.dp))
             Text(text = if (crashHappened) "Crash detected!" else "", color = Color.Black)
-            Text(text = if (crashHappened) "Remaining time to alarm raise:" else "", color = Color.Black)
+            Text(text = if (crashHappened) "Remaining time to message sending:" else "", color = Color.Black)
             Text(text = if (crashHappened) timerValue.toString() else "", fontSize = 25.sp, color = Color.Black)
 
         }
@@ -94,6 +104,5 @@ fun toggleTracking(isTracking : Boolean, viewModel: MainViewModel) {
     } else {
         viewModel.stopTracking()
         viewModel.crashAvoided()
-        viewModel.stopCountdownTimer()
     }
 }
