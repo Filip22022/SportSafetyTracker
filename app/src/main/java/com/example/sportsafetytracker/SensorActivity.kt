@@ -60,7 +60,8 @@ class SensorActivity(
                 crashDetectionListener?.onCrashAvoided()
             }
 
-            if (abs((lastAcceleration ?: 0.0) - acceleration) > 8) {
+            if (abs((lastAcceleration ?: 0.0) - acceleration) > 8
+                && (mainViewModel.crashHappened.value == false || mainViewModel.crashHappened.value == null)) {
                 crashDetectionListener?.onCrashDetected()
 
 
