@@ -1,13 +1,10 @@
 package com.example.sportsafetytracker
 
+import android.content.Context
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
-import android.content.Context
-import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.sqrt
 
@@ -49,10 +46,8 @@ class SensorActivity(
 
             val acceleration = sqrt((x*x + y*y + z*z).toDouble())
 
-            var currentDelayTime : Long = 0
-            mainViewModel.viewModelScope.launch {
-                currentDelayTime = mainViewModel.loadDelayTime().first().toLong()
-            }
+            var currentDelayTime : Long = mainViewModel.getDelayTime().toLong()
+
 
             if (mainViewModel.crashHappened.value == true
                 && abs((lastAcceleration ?: 0.0) - acceleration) > 2
@@ -66,7 +61,7 @@ class SensorActivity(
 
 
                 if (currentDelayTime > 0) {
-                    mainViewModel.startCountdownTimer((currentDelayTime)*1000)
+                    mainViewModel.startCountdownTimer((currentDelayTime+15)*1000)
                 }
             }
 

@@ -1,5 +1,6 @@
 package com.example.sportsafetytracker
 
+import android.Manifest
 import android.app.Application
 import android.content.Context
 import android.content.pm.PackageManager
@@ -19,7 +20,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import android.Manifest
 import java.util.Locale
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -172,7 +172,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             override fun onTick(millisUntilFinished: Long) {
                 _timerValue.postValue(millisUntilFinished / 1000)
 
-                if (millisUntilFinished / 1000 <= 15.0) {
+
+                if (millisUntilFinished / 1000 <= getDelayTime()) {
                     playAlarmSound()
                 }
             }
