@@ -60,6 +60,9 @@ fun SettingsScreen(
     var isDelayTimeErrorVisible by remember {
         mutableStateOf(false)
     }
+    var phoneTextColor by remember {
+        mutableStateOf(Color.Green)
+    }
 
     Box(
         modifier = Modifier
@@ -118,6 +121,7 @@ fun SettingsScreen(
                     onValueChange = {
                         newNumberValue = it
                         isValidPhoneNumber = true
+                        inputSuccessText = ""
                     },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Phone,
@@ -146,7 +150,7 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                 )
-                val phoneTextColor = if (isValidPhoneNumber) Color.Green else Color.Red
+                phoneTextColor = if (isValidPhoneNumber) Color.Green else Color.Red
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         text = inputSuccessText,
@@ -164,11 +168,7 @@ fun SettingsScreen(
                         if (it.length <= characterLimit) {
                             newCustomMessage = it
                         }
-                        else {
-                            inputMessageSuccessText = "Message too long"
-                        }
-                        inputPhoneSuccessText = ""
-                        inputMessageSuccessText =""
+                        inputSuccessText = ""
                     },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Text,
