@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,11 +30,11 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.SavedStateHandle
 import com.example.sportsafetytracker.LocalMainViewModel
 import com.example.sportsafetytracker.MainViewModel
 
@@ -47,6 +48,8 @@ fun SettingsScreen(
     val delayTime by viewModel.loadDelayTime().collectAsState(initial = 60)
     val numberValue by viewModel.loadPhoneNumber().collectAsState(initial = "")
     var newNumberValue by remember {mutableStateOf("")}
+    val customMessage by viewModel.loadCustomMessage().collectAsState(initial = "")
+    var newCustomMessage by remember { mutableStateOf("")}
     var isValidPhoneNumber by remember {
         mutableStateOf(true)
     }
@@ -115,7 +118,24 @@ fun SettingsScreen(
                         newNumberValue = it
                         isValidPhoneNumber = true
                     },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Phone,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            isValidPhoneNumber = viewModel.isValidNumber(newNumberValue)
+                            if (isValidPhoneNumber) {
+                                viewModel.updatePhoneNumber(newNumberValue)
+                                newNumberValue = ""
+                                inputSuccessText = "Phone number saved"
+
+                            } else {
+                                inputSuccessText = "Invalid number input. \nNumber correct formula is: \nArea Code & 9 digits \ne.g. +48987654321"
+                            }
+                            keyboardController?.hide()
+                        }
+                    ),
                     label = { Text("Emergency Phone Number") },
                     colors = TextFieldDefaults.textFieldColors(
                         textColor = if (isValidPhoneNumber) Color.Unspecified else Color.Red,
@@ -125,30 +145,34 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                 )
-                Button(
-                    onClick = {
-                        isValidPhoneNumber = viewModel.isValidNumber(newNumberValue)
-                        if (isValidPhoneNumber) {
-                            viewModel.updatePhoneNumber(newNumberValue)
-                            newNumberValue = ""
-                            inputSuccessText = "Phone number saved"
-
-                        } else {
-                            inputSuccessText = "Invalid number input. \nNumber correct formula is: \nArea Code & 9 digits \ne.g. +48987654321"
-                        }
-                        keyboardController?.hide()
-                    }
-                ) {
-                    Text(text = "Save")
-                }
-                val textColor = if (isValidPhoneNumber) Color.Green else Color.Red
+                val phoneTextColor = if (isValidPhoneNumber) Color.Green else Color.Red
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Text(
                         text = inputSuccessText,
-                        color = textColor,
+                        color = phoneTextColor,
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
+                TextField(value = newCustomMessage,
+                    placeholder = {Text(text = customMessage)},
+                    onValueChange = {
+                        newCustomMessage = it
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            viewModel.updateCustomMessage(newCustomMessage)
+                            newCustomMessage = ""
+                            keyboardController?.hide()
+                        }
+                    ),
+                    label = { Text("Custom Emergency Message") },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                )
             }
         }
         Button(

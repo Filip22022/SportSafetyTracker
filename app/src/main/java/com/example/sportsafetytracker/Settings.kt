@@ -15,6 +15,7 @@ class Settings(private val context: Context) {
     object PreferencesKeys {
         val DELAY_KEY = intPreferencesKey("delay_key")
         val PHONE_KEY = stringPreferencesKey(name = "phone_key")
+        val MESSAGE_KEY = stringPreferencesKey(name = "custom_message_key")
     }
 
     //suspend fun saveSettings() {
@@ -49,5 +50,19 @@ class Settings(private val context: Context) {
                 preferences[PreferencesKeys.PHONE_KEY] ?: ""
             }
         return phoneNumber
+    }
+
+    suspend fun saveCustomMessage(custom_message: String) {
+        context.dataStore.edit { settings ->
+            settings[PreferencesKeys.MESSAGE_KEY] = (custom_message ?: "")
+        }
+    }
+
+    fun loadCustomMessage(): Flow<String> {
+        var customMessage: Flow<String> = context.dataStore.data
+            .map { preferences ->
+                preferences[PreferencesKeys.MESSAGE_KEY] ?: ""
+            }
+        return customMessage
     }
 }

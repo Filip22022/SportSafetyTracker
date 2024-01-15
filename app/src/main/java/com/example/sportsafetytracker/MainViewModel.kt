@@ -101,8 +101,36 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         return settingsManager.loadDelayTime()
     }
 
+    fun getDelayTime(): Int {
+        val delayTime: Int
+        runBlocking(Dispatchers.IO) {
+            delayTime = loadDelayTime().first()
+        }
+        return delayTime
+    }
+
     fun loadPhoneNumber(): Flow<String> {
         return settingsManager.loadPhoneNumber()
+    }
+
+    fun getPhoneNumber(): String {
+        val phoneNumber: String
+        runBlocking(Dispatchers.IO) {
+            phoneNumber = loadPhoneNumber().first()
+        }
+        return phoneNumber
+    }
+
+    fun loadCustomMessage(): Flow<String> {
+        return settingsManager.loadCustomMessage()
+    }
+
+    fun getCustomMessage(): String {
+        val customMessage: String
+        runBlocking(Dispatchers.IO) {
+            customMessage = loadCustomMessage().first()
+        }
+        return customMessage
     }
 
      fun updateDelayTime(delayTime: Int) {
@@ -117,6 +145,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         runBlocking {
             launch {
                 settingsManager.savePhoneNumber(number)
+            }
+        }
+    }
+
+    fun updateCustomMessage(message: String) {
+        runBlocking {
+            launch {
+                settingsManager.saveCustomMessage(message)
             }
         }
     }
@@ -159,7 +195,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             var locationListener: LocationListener? = null
             locationListener = LocationListener { location ->
-                val locationMessage = toDMS(location.latitude, location.longitude)
+                val locationMessage = R.string.location_message_prefix.toString() + toDMS(location.latitude, location.longitude)
                 sendSMS(locationMessage)
 
                 locationListener?.let { listener ->
@@ -180,13 +216,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun sendSMS(locationMessage: String) {
-        val phoneNumber: String
-        runBlocking(Dispatchers.IO) {
-            phoneNumber = loadPhoneNumber().first()
-        }
+        val phoneNumber = getPhoneNumber()
+        val customMessage = getCustomMessage()
+        var message = R.string.default_message.toString()
 
         val smsManager: SmsManager = SmsManager.getDefault()
-        val message = "Emergency Alert! \n\nMy exact location: $locationMessage"
+        if (customMessage != "") {
+            message = customMessage + locationMessage
+        } else {
+            message = R.string.default_message.toString() + locationMessage
+        }
         //smsManager.sendTextMessage(phoneNumber, null, message, null, null)
 
         Toast.makeText(getApplication<Application>().applicationContext, "$phoneNumber: $message", Toast.LENGTH_LONG).show()
