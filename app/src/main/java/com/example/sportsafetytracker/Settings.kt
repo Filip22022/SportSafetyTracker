@@ -53,15 +53,17 @@ class Settings(private val context: Context) {
     }
 
     suspend fun saveCustomMessage(custom_message: String) {
+        var custom_message = custom_message
+        if (custom_message == "") custom_message = context.getString(R.string.default_message)
         context.dataStore.edit { settings ->
-            settings[PreferencesKeys.MESSAGE_KEY] = (custom_message ?: "")
+            settings[PreferencesKeys.MESSAGE_KEY] = custom_message
         }
     }
 
     fun loadCustomMessage(): Flow<String> {
         var customMessage: Flow<String> = context.dataStore.data
             .map { preferences ->
-                preferences[PreferencesKeys.MESSAGE_KEY] ?: ""
+                preferences[PreferencesKeys.MESSAGE_KEY] ?: context.getString(R.string.default_message)
             }
         return customMessage
     }
