@@ -61,7 +61,7 @@ class SensorActivity(
 
 
                 if (currentDelayTime > 0) {
-                    mainViewModel.startCountdownTimer((currentDelayTime+15)*1000)
+                    mainViewModel.startCountdownTimer((currentDelayTime + 10)*1000)
                 }
             }
 

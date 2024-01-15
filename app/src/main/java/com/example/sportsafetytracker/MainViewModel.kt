@@ -196,7 +196,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             var locationListener: LocationListener? = null
             locationListener = LocationListener { location ->
-                val locationMessage = "\n\n" + R.string.location_message_prefix.toString() + toDMS(location.latitude, location.longitude)
+                val context = getApplication<Application>().applicationContext
+                val locationMessage = "\n\n" + context.getString(R.string.location_message_prefix) + " " + toDMS(location.latitude, location.longitude)
                 sendSMS(locationMessage)
 
                 locationListener?.let { listener ->
@@ -217,19 +218,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun sendSMS(locationMessage: String) {
+        val context = getApplication<Application>().applicationContext
         val phoneNumber = getPhoneNumber()
         val customMessage = getCustomMessage()
-        var message = R.string.default_message.toString()
+        val defaultMessage = context.getString(R.string.default_message)
+        var message: String
 
         val smsManager: SmsManager = SmsManager.getDefault()
         if (customMessage != "") {
             message = customMessage + locationMessage
         } else {
-            message = R.string.default_message.toString() + locationMessage
+            message = defaultMessage + locationMessage
         }
-        //smsManager.sendTextMessage(phoneNumber, null, message, null, null)
 
-        Toast.makeText(getApplication<Application>().applicationContext, "$phoneNumber: $message", Toast.LENGTH_LONG).show()
+        val parts = smsManager.divideMessage(message)
+        for (part in parts) {
+            smsManager.sendTextMessage(phoneNumber, null, part, null, null)
+        }
+
+        Toast.makeText(context, "$phoneNumber: $message", Toast.LENGTH_LONG).show()
 
         Log.d("SMS", "Message sent successfully")
 
