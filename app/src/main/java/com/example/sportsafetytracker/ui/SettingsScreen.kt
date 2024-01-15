@@ -43,6 +43,7 @@ import com.example.sportsafetytracker.MainViewModel
 fun SettingsScreen(
     onCancelButtonClicked: () -> Unit = {}
 ){
+    val characterLimit = 60
     val keyboardController = LocalSoftwareKeyboardController.current
     val viewModel = LocalMainViewModel.current
     val delayTime by viewModel.loadDelayTime().collectAsState(initial = 60)
@@ -153,10 +154,21 @@ fun SettingsScreen(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 }
+                Text(text = "Custom Emergency Message:",
+                    color = Color.Black)
+                Text(text = customMessage,
+                    color = Color.Black)
                 TextField(value = newCustomMessage,
                     placeholder = {Text(text = customMessage)},
                     onValueChange = {
-                        newCustomMessage = it
+                        if (it.length <= characterLimit) {
+                            newCustomMessage = it
+                        }
+                        else {
+                            inputMessageSuccessText = "Message too long"
+                        }
+                        inputPhoneSuccessText = ""
+                        inputMessageSuccessText =""
                     },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Text,
@@ -169,7 +181,7 @@ fun SettingsScreen(
                             keyboardController?.hide()
                         }
                     ),
-                    label = { Text("Custom Emergency Message") },
+                    label = { Text("New message (max $characterLimit characters)") },
                     modifier = Modifier
                         .fillMaxWidth()
                 )
