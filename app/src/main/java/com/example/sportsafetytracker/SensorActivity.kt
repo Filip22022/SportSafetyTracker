@@ -5,13 +5,31 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.content.Context
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlin.math.abs
 import kotlin.math.sqrt
 
-class SensorActivity(context: Context, private val onDataChanged: (Triple<Float, Float, Float>) -> Unit) : SensorEventListener {
+class SensorActivity(
+    private val mainViewModel: MainViewModel,
+    context: Context,
+    private val onDataChanged: (Triple<Float, Float, Float>) -> Unit) : SensorEventListener {
     private var sensorManager: SensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     private var accelerometer: Sensor? = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
-    var lastAcceleration : Double? = null
+    interface CrashDetectionListener {
+        fun onCrashDetected()
+        fun onCrashAvoided()
+    }
+
+    private var crashDetectionListener: CrashDetectionListener? = null
+
+    fun setCrashDetectionListener(listener: CrashDetectionListener) {
+        crashDetectionListener = listener
+    }
+
+    private var lastAcceleration : Double? = 10.0
     fun startTracking() {
         accelerometer?.also { accel ->
             sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_NORMAL)
@@ -19,6 +37,7 @@ class SensorActivity(context: Context, private val onDataChanged: (Triple<Float,
     }
 
     fun stopTracking() {
+        lastAcceleration = 10.0
         sensorManager.unregisterListener(this)
     }
 
@@ -30,10 +49,29 @@ class SensorActivity(context: Context, private val onDataChanged: (Triple<Float,
 
             val acceleration = sqrt((x*x + y*y + z*z).toDouble())
 
-            if (lastAcceleration != acceleration) {
-                lastAcceleration = acceleration
-
+            var currentDelayTime : Long = 0
+            mainViewModel.viewModelScope.launch {
+                currentDelayTime = mainViewModel.loadDelayTime().first().toLong()
             }
+
+            if (mainViewModel.crashHappened.value == true
+                && abs((lastAcceleration ?: 0.0) - acceleration) > 2
+                && (mainViewModel.timerValue.value ?: 0) <= (currentDelayTime.toInt() - 5)) {
+                crashDetectionListener?.onCrashAvoided()
+            }
+
+            if (abs((lastAcceleration ?: 0.0) - acceleration) > 8
+                && (mainViewModel.crashHappened.value == false || mainViewModel.crashHappened.value == null)) {
+                crashDetectionListener?.onCrashDetected()
+
+
+                if (currentDelayTime > 0) {
+                    mainViewModel.startCountdownTimer((currentDelayTime)*1000)
+                }
+            }
+
+            lastAcceleration = acceleration
+
             onDataChanged(Triple(x, y, z))
         }
     }

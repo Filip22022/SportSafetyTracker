@@ -4,7 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -19,23 +21,27 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.sportsafetytracker.LocalMainViewModel
 import com.example.sportsafetytracker.MainViewModel
+import java.util.Locale
 
 
 @Composable
 fun TrackerScreen(
     onSettingsButtonClicked: () -> Unit = {}
 ){
-    //TOD0 move variables to proper place
     val viewModel = LocalMainViewModel.current
     val accelerometerData by viewModel.accelerometerData.observeAsState(Triple(0f, 0f, 0f))
-    val delayTime by viewModel.loadDelayTime().collectAsState(initial = 60)
-    var isTracking by remember { mutableStateOf(false) }
-    val context = LocalContext.current
+    val isTracking by viewModel.isTracking.observeAsState(false)
+    val crashHappened by viewModel.crashHappened.observeAsState(false)
+    val timerValue by viewModel.timerValue.observeAsState(0)
+    val delayTime by viewModel.loadDelayTime().collectAsState(initial = 60) // necessary even if unused
+    val numberValue by viewModel.loadPhoneNumber().collectAsState(initial = "")
+    var missingNumberValue by remember { mutableStateOf(false) }
+    val messageSent by viewModel.messageSent.observeAsState(false)
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -43,27 +49,85 @@ fun TrackerScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White),
+                .background(if(crashHappened) Color.Red else Color.White),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Button(
-                onClick = {
-                    isTracking = !isTracking
-                    toggleTracking(isTracking, viewModel)
-                },
-                modifier = Modifier
-                    .size(120.dp)
-            ) {
-                Text(text = if (!isTracking) "Start" else "Stop")
+            if (!messageSent) {
+                Button(
+                    onClick = {
+                        if (numberValue != "") {
+                            toggleTracking(isTracking, viewModel)
+                        } else {
+                            missingNumberValue = true
+                        }
+                    },
+                    modifier = Modifier
+                        .size(120.dp)
+                ) {
+                    Text(text = if (!isTracking) "Start" else "Stop")
+                }
+                Text(
+                    text = if (isTracking) "Tracking Enabled" else "Tracking Disabled",
+                    color = Color.Black
+                )
+                Text(
+                    text = if (missingNumberValue) "Choose emergency number in settings" else "",
+                    color = Color.Red
+                )
+                if (isTracking) {
+                    Text(
+                        text = "X: ${
+                            String.format(
+                                "%.2f",
+                                accelerometerData.first
+                            )
+                        }, Y: ${
+                            String.format(
+                                "%.2f",
+                                accelerometerData.second
+                            )
+                        }, Z: ${String.format("%.2f", accelerometerData.third)}",
+                        color = Color.Black
+                    )
+                }
+                Spacer(modifier = Modifier.height(30.dp))
+                Text(text = if (crashHappened) "Crash detected!" else "", color = Color.Black)
+                Text(
+                    text = if (crashHappened) "Remaining time to message sending:" else "",
+                    color = Color.Black
+                )
+                Text(
+                    text = if (crashHappened) timerValue.toString() else "",
+                    fontSize = 25.sp,
+                    color = Color.Black
+                )
+                if (crashHappened) {
+                    Button(
+                        onClick = {
+                            cancelCrashAlert(viewModel)
+                        }
+                    ) {
+                        Text(text = "I'm fine")
+                    }
+                }
             }
-            Text(text = if (isTracking) "Tracking Enabled" else "Tracking Disabled")
-            if (isTracking) {
-                Text(text = "X: ${accelerometerData.first}, Y: ${accelerometerData.second}, Z: ${accelerometerData.third}")
+            else {
+                Text(
+                    text = "Request for help has been sent",
+                    fontSize = 20.sp,
+                    color = Color.Black
+                )
+                Button(
+                    onClick = {
+                        viewModel.messageCanceled()
+                    }
+                ) {
+                    Text(text = "Get back to using the app")
+                }
             }
-
         }
-        if (!isTracking) {
+        if (!isTracking && !messageSent) {
             Button(
                 onClick = onSettingsButtonClicked,
                 modifier = Modifier
@@ -85,9 +149,12 @@ fun TrackerScreenPreview(){
 }
 
 fun toggleTracking(isTracking : Boolean, viewModel: MainViewModel) {
-    if (isTracking) {
-        viewModel.stopTracking()
-    } else {
-        viewModel.startTracking()
-    }
+    if(isTracking)
+        viewModel.stopIsTracking()
+    else
+        viewModel.startIsTracking()
+}
+
+fun cancelCrashAlert(viewModel: MainViewModel) {
+    viewModel.crashAvoided()
 }
