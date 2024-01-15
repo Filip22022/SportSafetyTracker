@@ -51,7 +51,7 @@ class SensorActivity(
 
             if (mainViewModel.crashHappened.value == true
                 && abs((lastAcceleration ?: 0.0) - acceleration) > 2
-                && (mainViewModel.timerValue.value ?: 0) <= (currentDelayTime.toInt() - 5)) {
+                && (mainViewModel.timerValue.value ?: 0) <= (currentDelayTime.toInt() + 5)) {
                 crashDetectionListener?.onCrashAvoided()
             }
 
