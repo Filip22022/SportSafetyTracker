@@ -5,8 +5,6 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.content.Context
-import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
 import kotlin.math.sqrt
 
 class SensorActivity(context: Context, private val onDataChanged: (Triple<Float, Float, Float>) -> Unit) : SensorEventListener {
