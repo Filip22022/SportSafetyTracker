@@ -196,7 +196,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             var locationListener: LocationListener? = null
             locationListener = LocationListener { location ->
-                val locationMessage = R.string.location_message_prefix.toString() + toDMS(location.latitude, location.longitude)
+                val locationMessage = "\n\n" + R.string.location_message_prefix.toString() + toDMS(location.latitude, location.longitude)
                 sendSMS(locationMessage)
 
                 locationListener?.let { listener ->
