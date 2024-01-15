@@ -180,7 +180,7 @@ fun SettingsScreen(
             modifier = Modifier
                 .align(Alignment.TopStart)
         ) {
-            Text(text = "Cancel")
+            Text(text = "Back")
         }
     }
 }
