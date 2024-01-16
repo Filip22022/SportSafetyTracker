@@ -26,7 +26,7 @@ class SensorActivity(
         crashDetectionListener = listener
     }
 
-    private var lastAcceleration : Double? = 0.0
+    private var lastAcceleration : Double? = 10.0
     fun startTracking() {
         accelerometer?.also { accel ->
             sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_NORMAL)
@@ -34,7 +34,7 @@ class SensorActivity(
     }
 
     fun stopTracking() {
-        lastAcceleration = 0.0
+        lastAcceleration = 10.0
         sensorManager.unregisterListener(this)
     }
 
