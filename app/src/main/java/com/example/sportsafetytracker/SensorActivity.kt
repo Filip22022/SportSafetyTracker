@@ -26,7 +26,7 @@ class SensorActivity(
         crashDetectionListener = listener
     }
 
-    private var lastAcceleration : Double? = 10.0
+    private var lastAcceleration : Double? = 0.0
     fun startTracking() {
         accelerometer?.also { accel ->
             sensorManager.registerListener(this, accel, SensorManager.SENSOR_DELAY_NORMAL)
@@ -34,7 +34,7 @@ class SensorActivity(
     }
 
     fun stopTracking() {
-        lastAcceleration = 10.0
+        lastAcceleration = 0.0
         sensorManager.unregisterListener(this)
     }
 
@@ -46,8 +46,7 @@ class SensorActivity(
 
             val acceleration = sqrt((x*x + y*y + z*z).toDouble())
 
-            var currentDelayTime : Long = mainViewModel.getDelayTime().toLong()
-
+            val currentDelayTime : Long = mainViewModel.getDelayTime().toLong()
 
             if (mainViewModel.crashHappened.value == true
                 && abs((lastAcceleration ?: 0.0) - acceleration) > 2
@@ -58,7 +57,6 @@ class SensorActivity(
             if (abs((lastAcceleration ?: 0.0) - acceleration) > 8
                 && (mainViewModel.crashHappened.value == false || mainViewModel.crashHappened.value == null)) {
                 crashDetectionListener?.onCrashDetected()
-
 
                 if (currentDelayTime > 0) {
                     mainViewModel.startCountdownTimer((currentDelayTime + 10)*1000)

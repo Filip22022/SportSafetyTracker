@@ -3,6 +3,7 @@ package com.example.sportsafetytracker
 import android.Manifest
 import android.app.Application
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.LocationListener
 import android.location.LocationManager
@@ -21,7 +22,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.util.Locale
+import kotlin.math.abs
 
+@Suppress("DEPRECATION")
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _accelerometerData = MutableLiveData<Triple<Float, Float, Float>>()
     val accelerometerData: LiveData<Triple<Float, Float, Float>> = _accelerometerData
@@ -34,6 +37,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _messageSent = MutableLiveData<Boolean>()
     val messageSent: LiveData<Boolean> = _messageSent
+
+    private var isOverlayDisplayed = false
 
     fun startIsTracking() {
         _isTracking.postValue(true)
@@ -61,9 +66,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val crashDetectionListener = object : SensorActivity.CrashDetectionListener {
             override fun onCrashDetected() {
                 _crashHappened.postValue(true)
+                checkCrashHappened(true)
             }
             override fun onCrashAvoided() {
                 _crashHappened.postValue(false)
+                checkCrashHappened(false)
                 stopCountdownTimer()
                 stopAlarmSound()
             }
@@ -74,11 +81,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val settingsManager = Settings(application)
 
-    fun crashDetected() {
-        _crashHappened.postValue(true)
-    }
     fun crashAvoided() {
         _crashHappened.postValue(false)
+        checkCrashHappened(false)
         stopCountdownTimer()
         stopAlarmSound()
     }
@@ -171,7 +176,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         countdownTimer = object : CountDownTimer(durationInMillis, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 _timerValue.postValue(millisUntilFinished / 1000)
-
+                updateTimerValue(millisUntilFinished / 1000)
 
                 if (millisUntilFinished / 1000 <= getDelayTime()) {
                     playAlarmSound()
@@ -180,7 +185,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             override fun onFinish() {
                 _timerValue.postValue(0)
-                stopAlarmSound()
+                updateTimerValue(0)
+                crashAvoided()
                 fetchLocationAndSendSMS()
             }
         }.start()
@@ -222,18 +228,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val phoneNumber = getPhoneNumber()
         val customMessage = getCustomMessage()
         val defaultMessage = context.getString(R.string.default_message)
-        var message: String
+        val message: String
 
         val smsManager: SmsManager = SmsManager.getDefault()
         if (customMessage != "") {
-            message = customMessage + locationMessage
+            message = customMessage
         } else {
-            message = defaultMessage + locationMessage
+            message = defaultMessage
         }
 
-        val parts = smsManager.divideMessage(message)
-        for (part in parts) {
-            smsManager.sendTextMessage(phoneNumber, null, part, null, null)
+        if (message.length <= 20) {
+            val parts = smsManager.divideMessage(message + locationMessage)
+            for (part in parts) {
+                smsManager.sendTextMessage(phoneNumber, null, part, null, null)
+            }
+        }
+        else {
+            val parts = smsManager.divideMessage(message)
+            for (part in parts) {
+                smsManager.sendTextMessage(phoneNumber, null, part, null, null)
+            }
+            smsManager.sendTextMessage(phoneNumber, null, locationMessage, null, null)
         }
 
         Toast.makeText(context, "$phoneNumber: $message", Toast.LENGTH_LONG).show()
@@ -244,13 +259,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun toDMS(latitude: Double, longitude: Double): String {
-        val latDegree = Math.abs(latitude).toInt()
-        val latMinute = ((Math.abs(latitude) - latDegree) * 60).toInt()
-        val latSecond = ((Math.abs(latitude) - latDegree - latMinute / 60.0) * 3600)
+        val latDegree = abs(latitude).toInt()
+        val latMinute = ((abs(latitude) - latDegree) * 60).toInt()
+        val latSecond = ((abs(latitude) - latDegree - latMinute / 60.0) * 3600)
 
-        val lonDegree = Math.abs(longitude).toInt()
-        val lonMinute = ((Math.abs(longitude) - lonDegree) * 60).toInt()
-        val lonSecond = ((Math.abs(longitude) - lonDegree - lonMinute / 60.0) * 3600)
+        val lonDegree = abs(longitude).toInt()
+        val lonMinute = ((abs(longitude) - lonDegree) * 60).toInt()
+        val lonSecond = ((abs(longitude) - lonDegree - lonMinute / 60.0) * 3600)
 
         val latDirection = if (latitude >= 0) "N" else "S"
         val lonDirection = if (longitude >= 0) "E" else "W"
@@ -274,4 +289,23 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         mediaPlayer = null
     }
 
+
+    fun checkCrashHappened(crashHappened : Boolean) {
+        if (crashHappened && !isOverlayDisplayed && MainActivity.isAppInBackground) {
+            val intent = Intent(getApplication(), OverlayService::class.java)
+            ContextCompat.startForegroundService(getApplication(), intent)
+            isOverlayDisplayed = true
+        } else if (!crashHappened && isOverlayDisplayed) {
+            getApplication<Application>().stopService(Intent(getApplication(), OverlayService::class.java))
+            isOverlayDisplayed = false
+        }
+    }
+
+    fun updateTimerValue(newValue: Long) {
+        SharedRepository.timerLiveData.postValue(newValue)
+    }
+}
+
+object SharedRepository {
+    val timerLiveData = MutableLiveData<Long>()
 }

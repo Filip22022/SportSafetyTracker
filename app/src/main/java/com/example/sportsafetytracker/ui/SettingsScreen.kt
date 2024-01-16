@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -88,13 +89,13 @@ fun SettingsScreen(
             Row {
                 Button(onClick = {
                     if(delayTime > 20) viewModel.updateDelayTime(delayTime - 1)
-                    else isDelayTimeErrorVisible = true;
+                    else isDelayTimeErrorVisible = true
                 }) {
                     Text(text = "-")
                 }
                 Button(onClick = {
                     viewModel.updateDelayTime(delayTime + 1)
-                    isDelayTimeErrorVisible = false;
+                    isDelayTimeErrorVisible = false
                 }) {
                     Text(text = "+")
                 }
@@ -160,8 +161,15 @@ fun SettingsScreen(
                 }
                 Text(text = "Custom Emergency Message:",
                     color = Color.Black)
-                Text(text = customMessage,
-                    color = Color.Black)
+                Box(
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = customMessage,
+                        color = Color.Black,
+                        textAlign = TextAlign.Center
+                    )
+                }
                 TextField(value = newCustomMessage,
                     placeholder = {Text(text = customMessage)},
                     onValueChange = {
